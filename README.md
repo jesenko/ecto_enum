@@ -135,6 +135,13 @@ end
 ```
 - Note that there is no easy way to drop an enum value. It is not supported and you must create a new type without the value. [Here](http://stackoverflow.com/questions/25811017/how-to-delete-an-enum-type-in-postgres) are some work-arounds. Best to avoid having to drop an enum value.
 
+EctoFlaggableEnum
+=================
+
+`EctoFlaggableEnum` provides `defenumf` macro, which defines _flaggable_ enum -
+i.e. enum that can have multiple values by denoting specific values as bitwise
+integer mask.
+
 ## Important links
 
   * [Documentation](http://hexdocs.pm/ecto_enum)
