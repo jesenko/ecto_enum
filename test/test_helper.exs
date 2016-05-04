@@ -24,3 +24,4 @@ Code.require_file "ecto_migration.exs", __DIR__
 :ok = Ecto.Migrator.up(TestRepo, 0, Ecto.Integration.Migration, log: false)
 Process.flag(:trap_exit, true)
 
+Ecto.Adapters.SQL.begin_test_transaction(TestRepo)

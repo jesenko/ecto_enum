@@ -69,6 +69,13 @@ iex> StatusEnum.__enum_map__()
 [registered: 0, active: 1, inactive: 2, archived: 3]
 ```
 
+EctoFlaggableEnum
+=================
+
+`EctoFlaggableEnum` provides `defenumf` macro, which defines _flaggable_ enum -
+i.e. enum that can have multiple values by denoting specific values as bitwise
+integer mask.
+
 ## Important links
 
   * [Documentation](http://hexdocs.pm/ecto_enum)
