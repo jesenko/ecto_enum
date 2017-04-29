@@ -10,5 +10,8 @@ defmodule Ecto.Integration.Migration do
     create table(:users_pg) do
       add :status, :status
     end
+    create table(:packages) do
+      add :properties, :integer
+    end
   end
 end
