@@ -67,15 +67,15 @@ defmodule EctoFlaggableEnum do
         def type, do: :integer
 
         def cast(term) do
-          EctoFlaggableEnum.cast(term, @int_atom_map, @string_atom_map)
+          EctoFlaggableEnum.Type.cast(term, @int_atom_map, @string_atom_map)
         end
 
         def load(int) when is_integer(int) do
-          {:ok, EctoFlaggableEnum.int_to_set(@int_atom_map, int)}
+          {:ok, EctoFlaggableEnum.Type.int_to_set(@int_atom_map, int)}
         end
 
         def dump(term) do
-          case EctoFlaggableEnum.dump(term, @atom_int_map, @int_atom_map, @string_atom_map) do
+          case EctoFlaggableEnum.Type.dump(term, @atom_int_map, @int_atom_map, @string_atom_map) do
             :error ->
               msg = "`#{inspect term}` is not a valid enum value for `#{inspect __MODULE__}`. " <>
                 "Valid enum values are list or set of values `#{inspect __valid_values__()}`, or integer representing a sum of integer enum values."
@@ -93,64 +93,66 @@ defmodule EctoFlaggableEnum do
     end
   end
 
-  @spec cast(list | integer | MapSet.t, map, map) :: {:ok, [MapSet.t]} | :error
-  def cast(list, int_atom_map, string_atom_map) when is_list(list) do
-    do_cast(list, [], int_atom_map, string_atom_map)
-  end
-  def cast(set = %MapSet{}, int_enum_map, string_atom_map) do
-    cast(set |> MapSet.to_list, int_enum_map, string_atom_map)
-  end
-  def cast(int, int_atom_map, _) when is_integer(int) do
-    {:ok, int_to_set(int_atom_map, int)}
-  end
-  def cast(_, _ ,_), do: :error
-
-  defp do_cast([string | rest], casted, int_to_atom, string_to_atom) when is_binary(string) do
-    if string_to_atom[string] do
-      do_cast(rest, [string_to_atom[string] | casted], int_to_atom, string_to_atom)
-    else
-      :error
+  defmodule Type do
+    @spec cast(list | integer | MapSet.t, map, map) :: {:ok, [MapSet.t]} | :error
+    def cast(list, int_atom_map, string_atom_map) when is_list(list) do
+      do_cast(list, [], int_atom_map, string_atom_map)
     end
-  end
-  defp do_cast([atom | rest], casted, int_to_atom, string_to_atom) when is_atom(atom) do
-    if atom in (string_to_atom |> Map.values) do
-      do_cast(rest, [atom | casted], int_to_atom, string_to_atom)
-    else
-      :error
+    def cast(set = %MapSet{}, int_enum_map, string_atom_map) do
+      cast(set |> MapSet.to_list, int_enum_map, string_atom_map)
     end
-  end
-  defp do_cast([int | rest], casted, int_to_atom, string_to_atom) when is_integer(int) do
-    if int_to_atom[int] do
-      do_cast(rest, [int_to_atom[int] | casted], int_to_atom, string_to_atom)
-    else
-      :error
+    def cast(int, int_atom_map, _) when is_integer(int) do
+      {:ok, int_to_set(int_atom_map, int)}
     end
-  end
-  defp do_cast([], casted, _, _) do
-    {:ok, MapSet.new(casted)}
-  end
+    def cast(_, _ ,_), do: :error
 
-  @spec dump(any, [{atom(), any()}], map, map) :: {:ok, integer} | :error
-  def dump(val, atom_to_int, int_to_atom, string_to_atom) do
-    case cast(val, int_to_atom, string_to_atom) do
-      {:ok, set} -> {:ok, set_to_int(set, atom_to_int)}
-      :error -> :error
+    defp do_cast([string | rest], casted, int_to_atom, string_to_atom) when is_binary(string) do
+      if string_to_atom[string] do
+        do_cast(rest, [string_to_atom[string] | casted], int_to_atom, string_to_atom)
+      else
+        :error
+      end
     end
-  end
+    defp do_cast([atom | rest], casted, int_to_atom, string_to_atom) when is_atom(atom) do
+      if atom in (string_to_atom |> Map.values) do
+        do_cast(rest, [atom | casted], int_to_atom, string_to_atom)
+      else
+        :error
+      end
+    end
+    defp do_cast([int | rest], casted, int_to_atom, string_to_atom) when is_integer(int) do
+      if int_to_atom[int] do
+        do_cast(rest, [int_to_atom[int] | casted], int_to_atom, string_to_atom)
+      else
+        :error
+      end
+    end
+    defp do_cast([], casted, _, _) do
+      {:ok, MapSet.new(casted)}
+    end
 
-  def int_to_set(enum_map, int) do
-    enum_map
-    |> Enum.filter_map(
-    fn {aint, _atom} -> (aint &&& int) == aint end,
-    fn {_, atom} -> atom end)
-    |> MapSet.new
-  end
+    @spec dump(any, map, map, map) :: {:ok, integer} | :error
+    def dump(val, atom_to_int, int_to_atom, string_to_atom) do
+      case cast(val, int_to_atom, string_to_atom) do
+        {:ok, set} -> {:ok, set_to_int(set, atom_to_int)}
+        :error -> :error
+      end
+    end
 
-  def set_to_int(set, atom_to_int) do
-    set
-    |> Enum.map(fn
-      key -> atom_to_int[key]
-    end)
-    |> Enum.reduce(0, fn(v, acc) -> acc ||| v end)
+    def int_to_set(enum_map, int) do
+      enum_map
+      |> Enum.filter_map(
+      fn {aint, _atom} -> (aint &&& int) == aint end,
+      fn {_, atom} -> atom end)
+      |> MapSet.new
+    end
+
+    def set_to_int(set, atom_to_int) do
+      set
+      |> Enum.map(fn
+        key -> atom_to_int[key]
+      end)
+      |> Enum.reduce(0, fn(v, acc) -> acc ||| v end)
+    end
   end
 end
