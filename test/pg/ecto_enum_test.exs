@@ -2,13 +2,13 @@ defmodule EctoEnumTest do
   use ExUnit.Case
 
   import EctoEnum
-  defenum StatusEnum, registered: 0, active: 1, inactive: 2, archived: 3
+  defenum(StatusEnum, registered: 0, active: 1, inactive: 2, archived: 3)
 
   defmodule User do
     use Ecto.Schema
 
     schema "users" do
-      field :status, StatusEnum
+      field(:status, StatusEnum)
     end
   end
 
@@ -20,11 +20,11 @@ defmodule EctoEnumTest do
     assert user.status == :registered
 
     user = Ecto.Changeset.change(user, status: :active)
-    user = TestRepo.update! user
+    user = TestRepo.update!(user)
     assert user.status == :active
 
     user = Ecto.Changeset.change(user, status: "inactive")
-    user = TestRepo.update! user
+    user = TestRepo.update!(user)
     assert user.status == "inactive"
 
     user = TestRepo.get(User, user.id)
@@ -36,56 +36,66 @@ defmodule EctoEnumTest do
   end
 
   test "casts int and binary to atom" do
-    %{changes: changes} = Ecto.Changeset.cast(%User{}, %{"status" => "active"}, ~w(status))
+    %{changes: changes} = Ecto.Changeset.cast(%User{}, %{"status" => "active"}, [:status])
     assert changes.status == :active
 
-    %{changes: changes} = Ecto.Changeset.cast(%User{}, %{"status" => 3}, ~w(status))
+    %{changes: changes} = Ecto.Changeset.cast(%User{}, %{"status" => 3}, [:status])
     assert changes.status == :archived
 
-    %{changes: changes} = Ecto.Changeset.cast(%User{}, %{"status" => :inactive}, ~w(status))
+    %{changes: changes} = Ecto.Changeset.cast(%User{}, %{"status" => :inactive}, [:status])
     assert changes.status == :inactive
   end
 
   test "raises when input is not in the enum map" do
     error = {:status, {"is invalid", [type: EctoEnumTest.StatusEnum, validation: :cast]}}
 
-    changeset = Ecto.Changeset.cast(%User{}, %{"status" => "retroactive"}, ~w(status))
+    changeset = Ecto.Changeset.cast(%User{}, %{"status" => "retroactive"}, [:status])
     assert error in changeset.errors
 
-    changeset = Ecto.Changeset.cast(%User{}, %{"status" => :retroactive}, ~w(status))
+    changeset = Ecto.Changeset.cast(%User{}, %{"status" => :retroactive}, [:status])
     assert error in changeset.errors
 
-    changeset = Ecto.Changeset.cast(%User{}, %{"status" => 4}, ~w(status))
+    changeset = Ecto.Changeset.cast(%User{}, %{"status" => 4}, [:status])
     assert error in changeset.errors
 
-    assert_raise Ecto.ChangeError, custom_error_msg("retroactive"), fn ->
+    assert_raise Ecto.ChangeError, error_msg("retroactive"), fn ->
       TestRepo.insert!(%User{status: "retroactive"})
     end
 
-    assert_raise Ecto.ChangeError, custom_error_msg(:retroactive), fn ->
+    assert_raise Ecto.ChangeError, error_msg(:retroactive), fn ->
       TestRepo.insert!(%User{status: :retroactive})
     end
 
-    assert_raise Ecto.ChangeError, custom_error_msg(5), fn ->
+    assert_raise Ecto.ChangeError, error_msg(5), fn ->
       TestRepo.insert!(%User{status: 5})
     end
   end
 
   test "reflection" do
     assert StatusEnum.__enum_map__() == [registered: 0, active: 1, inactive: 2, archived: 3]
-    assert StatusEnum.__valid_values__() == [0, 1, 2, 3,
-      :registered, :active, :inactive, :archived,
-      "active", "archived", "inactive", "registered"]
+
+    assert StatusEnum.__valid_values__() == [
+             0,
+             1,
+             2,
+             3,
+             :registered,
+             :active,
+             :inactive,
+             :archived,
+             "active",
+             "archived",
+             "inactive",
+             "registered"
+           ]
   end
 
   test "defenum/2 can accept variables" do
     x = 0
-    defenum TestEnum, zero: x
+    defenum(TestEnum, zero: x)
   end
 
-  def custom_error_msg(value) do
-    "`#{inspect value}` is not a valid enum value for `EctoEnumTest.StatusEnum`." <>
-    " Valid enum values are `[0, 1, 2, 3, :registered, :active, :inactive, :archived," <>
-    " \"active\", \"archived\", \"inactive\", \"registered\"]`"
+  def error_msg(value) do
+    "value `#{inspect(value)}` for `EctoEnumTest.User.status` in `insert` does not match type EctoEnumTest.StatusEnum"
   end
 end
