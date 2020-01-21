@@ -35,7 +35,7 @@ defmodule EctoEnum.Mixfile do
   defp deps do
     [
       {:ecto_sql, "~> 3.0"},
-      {:postgrex, "~> 0.14.0", optional: true},
+      {:postgrex, ">= 0.14.0", optional: true},
       {:ex_doc, "~> 0.18.0", only: :dev},
       {:earmark, "~> 1.1", only: :dev},
       {:inch_ex, ">= 0.0.0", only: [:dev, :test]}
