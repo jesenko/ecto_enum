@@ -2,18 +2,19 @@ defmodule EctoEnum.Postgres do
   @moduledoc false
 
   def defenum(module, type, list) do
-    list = if Enum.all?(list, &is_atom/1) do
+    list =
+      if Enum.all?(list, &is_atom/1) do
         list
       else
         Enum.map(list, &String.to_atom/1)
       end
 
     quote do
-      type = unquote(type) |> Macro.escape
-      list = unquote(list) |> Macro.escape
+      type = unquote(type) |> Macro.escape()
+      list = unquote(list) |> Macro.escape()
 
       defmodule unquote(module) do
-        @behaviour Ecto.Type
+        use Ecto.Type
         alias EctoEnum.Postgres
 
         @atom_list list
@@ -41,18 +42,17 @@ defmodule EctoEnum.Postgres do
 
         def create_type() do
           types = Enum.map_join(unquote(list), ", ", &"'#{&1}'")
-          sql = "CREATE TYPE #{unquote type} AS ENUM (#{types})"
-          Ecto.Migration.execute sql
+          sql = "CREATE TYPE #{unquote(type)} AS ENUM (#{types})"
+          Ecto.Migration.execute(sql)
         end
 
         def drop_type() do
-          sql = "DROP TYPE #{unquote type}"
-          Ecto.Migration.execute sql
+          sql = "DROP TYPE #{unquote(type)}"
+          Ecto.Migration.execute(sql)
         end
       end
     end
   end
-
 
   def cast(atom, valid_values, _) when is_atom(atom) do
     if atom in valid_values do
@@ -61,15 +61,17 @@ defmodule EctoEnum.Postgres do
       :error
     end
   end
+
   def cast(string, _, string_atom_map) when is_binary(string) do
     Map.fetch(string_atom_map, string)
   end
-  def cast(_, _, _), do: :error
 
+  def cast(_, _, _), do: :error
 
   def dump(atom, _, atom_string_map) when is_atom(atom) do
     Map.fetch(atom_string_map, atom)
   end
+
   def dump(string, valid_values, _) when is_binary(string) do
     if string in valid_values do
       {:ok, string}
@@ -77,5 +79,6 @@ defmodule EctoEnum.Postgres do
       :error
     end
   end
+
   def dump(_, _, _), do: :error
 end

@@ -55,7 +55,7 @@ defmodule EctoFlaggableEnum do
       kw = unquote(enum) |> Macro.escape()
 
       defmodule unquote(module) do
-        @behaviour Ecto.Type
+        use Ecto.Type
 
         @atom_int_kw kw
         @atom_int_map kw |> Enum.into(%{})

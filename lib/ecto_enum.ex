@@ -67,7 +67,7 @@ defmodule EctoEnum do
       kw = unquote(enum) |> Macro.escape()
 
       defmodule unquote(module) do
-        @behaviour Ecto.Type
+        use Ecto.Type
 
         @atom_int_kw kw
         @int_atom_map for {atom, int} <- kw, into: %{}, do: {int, atom}
